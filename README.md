@@ -1,5 +1,10 @@
 # To-Do-List
 
+## Built With
+- HTML
+- CSS
+- JavaScript
+
 ## Description
 A site where the user can add new to-do list entries which have a title, category, and description. These entries can then be checked as completed or incomplete and are sorted by their respective categories. The user can choose if they want to see all entries or only those from a specific category. This website was built using HTML, CSS, and JavaScript
 
