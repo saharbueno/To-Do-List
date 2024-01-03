@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Seasonal To-Do List</title>
+        <style>
+            body {
+                background-image: url('images/corkboard.jpg');
+            }
+            #firstHeader{
+                display: flex;
+                justify-content: center;
+                color: white;
+                text-shadow: 2px 2px 2px black,20px 5px 2px black
+            }
+            #add_item {
+                position: absolute;
+                bottom: 20px;
+                right: 20px;
+            }
+
+            #add_item:hover {
+                width: 5%;
+                height: auto;
+            }
+            #season_filter {
+                position: absolute;
+                top: 20px;
+                right: 20px;
+            }
+            #panel_add_new_item {
+                padding: 25px;
+                width: 500px;
+                height: 250px;
+                background-color: white;
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                margin-left: -250px;
+                margin-top: -125px;
+                text-align: left;
+                border-radius: 25px;
+            }
+            .hidden {
+                display: none;
+            }
+            .error {
+                background-color: red;
+                color: white;
+                margin-top: 10px;
+                margin-bottom: 10px;
+
+            }
+            .item {
+                position: relative;
+                width: 140px;
+                height: 140px;
+                margin: auto;
+                padding: 10px;
+            }
+            .winter {
+                background-color: lightblue;                
+            }
+            .spring {
+                background-color: lightgreen;
+            }
+            .summer {
+                background-color: yellow;
+            }
+            .fall {
+                background-color: burlywood;
+            }
+            .delete_button {
+                position: absolute;
+                top: -8px;
+                right: -15px;
+                z-index: 1;
+            }
+            .itemDiv {
+                position: relative;
+                width: 150px;
+                height: 150px;
+                float: left;
+                margin-right: 20px;
+                z-index: 0;
+            }
+            #panel_item {
+                padding: 15px;
+                width: 500px;
+                height: 250px;
+                background-color: white;
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                margin-left: -250px;
+                margin-top: -125px;
+                z-index: 2;
+                text-align: left;
+                border-radius: 25px;
+            }
+            .visible {
+                display: block;
+            }
+            .button {
+                position: relative;
+                background-color: white;
+                border-width: 2px;
+                border-color: black;
+                bottom: 20px;
+                left: 0px;
+                border-radius: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1 id="firstHeader">Seasonal To-Do List</h1>
+
+        <select id="season_filter">
+            <option value="all">Show all seasons</option>
+            <option value="winter">Winter</option>
+            <option value="spring">Spring</option>
+            <option value="summer">Summer</option>
+            <option value="fall">Fall</option>
+            <option value="complete">Complete</option>
+            <option value="incomplete">Incomplete</option>
+        </select>
+
+        <img id="add_item" src="images/add_button.png">
+
+        <div id="panel_add_new_item" class="hidden">
+            <h2>Add new Item</h2>
+
+            <div class="error hidden" id="add_error">Please fill out all of the form fields!</div>
+
+            <form>
+                <label for="title">Title</label><br>
+                <input type="text" id="title"><br>
+
+                <label for="category">Category</label><br>
+                <select id="category">
+                    <option value="winter">Winter</option>
+                    <option value="spring">Spring</option>
+                    <option value="summer">Summer</option>
+                    <option value="fall">Fall</option>
+                </select><br>
+        
+                <label for="description">Description</label><br>
+                <textarea id="description"></textarea><br>
+
+                <button id="add_save">Save</button>
+                <button id="add_cancel">Cancel</button>
+            </form>
+        </div>
+
+        <div class="winterClass" class="hidden"></div>
+        <div class="springClass" class="hidden"></div>
+        <div class="fallClass" class="hidden"></div>
+        <div class="summerClass" class="hidden"></div>
+        <div class="incomplete" class="hidden"></div>
+        <div class="complete" class="hidden"></div>
+
+        <div id="panel_item" class="hidden">
+            <h1 id="h1"></h1>
+            <p id="season">Season:</p>
+            <p id="des">Description</p>
+            <hr>
+            <p id="created">Created</p>
+            <p id="accessed">Last Accessed</p>
+            <button id="item_close">Close</button>
+        </div>
+
+        <div id="item_container"></div>
+
+        <script>
+            // dom queries
+            const panel_add_new_item = document.querySelector("#panel_add_new_item");
+            const add_item = document.querySelector("#add_item");
+            const add_cancel = document.getElementById('add_cancel');
+            const add_save = document.getElementById('add_save');
+            const add_error = document.getElementById('add_error');
+            const item_container = document.getElementById('item_container');
+
+            // when the user clicks on the + button trigger the panel to appear
+            add_item.onclick = function(e) {
+                panel_add_new_item.classList.remove('hidden');
+
+                // erase the form
+                document.querySelector('#title').value = '';
+                document.querySelector('#description').value = '';
+                document.querySelector('#category').value = 'winter';
+            }
+
+            add_cancel.onclick = function(e) {
+                e.preventDefault();
+                panel_add_new_item.classList.add('hidden');
+            }
+
+            add_save.onclick = function(e) {
+                e.preventDefault();
+
+                // grab the value from the title, category and description fields
+                let t = document.querySelector('#title').value;
+                let d = document.querySelector('#description').value;
+                let c = document.querySelector('#category').value;
+
+                // if we do have all 3, create the to-do item
+                if (t && d && c) {
+                    let seasonFilter = document.getElementById('season_filter');
+                    seasonFilter.value = 'all';
+
+                    add_error.classList.add('hidden');
+
+                    // create div to put element inside 
+                    let itemDiv = document.createElement('div');
+                    itemDiv.classList.add('itemDiv');
+
+                    // create our new to-do item
+                    let item = document.createElement('div');
+                    item.classList.add('item');
+                    item.innerText = t;
+                    item.classList.add(c);
+                    itemDiv.appendChild(item);
+                    item_container.appendChild(itemDiv);
+
+                    // get time for when our item was created
+                    var timeCreated = new Date();
+                    let hours = timeCreated.getHours();
+                    let dayOrNight = "am";
+
+                    // convert hours 
+                    if (hours == 13) {
+                        hours = 1;
+                        dayOrNight = "pm";
+                    } else if (hours == 14) {
+                        hours = 2;
+                        dayOrNight = "pm";
+                    } else if (hours == 15) {
+                        hours = 3;
+                        dayOrNight = "pm";
+                    } else if (hours == 16) {
+                        hours = 4;
+                        dayOrNight = "pm";
+                    } else if (hours == 17) {
+                        hours = 5;
+                        dayOrNight = "pm";
+                    } else if (hours == 18) {
+                        hours = 6;
+                        dayOrNight = "pm";
+                    } else if (hours == 19) {
+                        hours = 7;
+                        dayOrNight = "pm";
+                    } else if (hours == 20) {
+                        hours = 8;
+                        dayOrNight = "pm";
+                    } else if (hours == 21) {
+                        hours = 9;
+                        dayOrNight = "pm";
+                    } else if (hours == 22) {
+                        hours = 10;
+                        dayOrNight = "pm";
+                    } else if (hours == 23) {
+                        hours = 11;
+                        dayOrNight = "pm";
+                    } else if (hours == 24){
+                        hours = 12;
+                        dayOrNight = "am";
+                    } else {
+                        dayOrNight = "am";
+                    }
+
+                    item.dataset.timeCreated = (timeCreated.getMonth()+1)  + "/" + timeCreated.getDay() + "/" + timeCreated.getFullYear() + " " + hours + ":" + timeCreated.getMinutes() + " " + dayOrNight;
+
+                    // add our delete button to the new item
+                    let deleteButton = document.createElement('img');
+                    deleteButton.src = 'images/delete_button.png';
+                    deleteButton.classList.add('hidden');
+                    itemDiv.appendChild(deleteButton);
+
+                    // add complete button to new item
+                    const completedButton = document.createElement('button');
+                    completedButton.innerHTML = 'Click to complete';
+                    itemDiv.appendChild(completedButton);
+                    itemDiv.classList.add('incomplete');
+                    completedButton.classList.add('button');
+                    completedButton.onclick = function(event) {
+                        if (event.currentTarget.parentElement.classList.contains('incomplete')) {
+                            event.currentTarget.parentElement.classList.remove('incomplete');
+                            event.currentTarget.parentElement.classList.add('complete');
+                            completedButton.innerHTML = "Click to incomplete";
+                        } else if (event.currentTarget.parentElement.classList.contains('complete')){
+                            event.currentTarget.parentElement.classList.remove('complete');
+                            event.currentTarget.parentElement.classList.add('incomplete');
+                            completedButton.innerHTML = 'Click to complete';
+                        }
+                    }
+
+                    // have the item rememeber all the data it knows about itself
+                    item.dataset.title = t;
+                    item.dataset.description = d;
+                    item.dataset.category = c;
+
+                    // append divs to the category they belong to
+                    let winterClass = document.querySelector('.winterClass');
+                    let springClass = document.querySelector('.springClass');
+                    let fallClass = document.querySelector('.fallClass');
+                    let summerClass = document.querySelector('.summerClass');
+                    if (item.dataset.category == 'winter') {
+                        winterClass.appendChild(itemDiv);
+                    } else if (item.dataset.category == 'spring') {
+                        springClass.appendChild(itemDiv);
+                    } else if (item.dataset.category == 'fall') {
+                        fallClass.appendChild(itemDiv);
+                    } else {
+                        summerClass.appendChild(itemDiv);
+                    }
+
+                    // if delete button is clicked, delete item 
+                    deleteButton.onclick = function(event) {
+                        event.currentTarget.parentElement.parentElement.removeChild(event.currentTarget.parentElement);
+                    }
+
+                    deleteButton.onmouseover = function(event) {
+                        event.currentTarget.classList.remove('hidden');
+                        event.currentTarget.classList.add('delete_button');
+                    }
+
+                    deleteButton.onmouseout = function(event) {
+                        event.currentTarget.classList.remove('delete_button');
+                        event.currentTarget.classList.add('hidden');
+                    }
+
+                    // if item is hovered on, it must show the delete button
+                    item.onmouseover = function(event) {
+                        item.nextElementSibling.classList.remove('hidden');
+                        item.nextElementSibling.classList.add('delete_button');
+                    }
+
+                    item.onmouseout = function(event) {
+                        item.nextElementSibling.classList.remove('delete_button');
+                        item.nextElementSibling.classList.add('hidden');
+                    }
+
+                    // if filter is changed, only show those with that season 
+                    seasonFilter.onchange = function(event) {
+                        let seasonFilter = document.getElementById('season_filter');
+                        let winterClass = document.querySelector('.winterClass');
+                        let springClass = document.querySelector('.springClass');
+                        let fallClass = document.querySelector('.fallClass');
+                        let summerClass = document.querySelector('.summerClass');
+                        let incomplete = document.querySelector('.incomplete');
+                        let complete = document.querySelector('.complete');
+                        if (seasonFilter.value == 'winter') {
+                            winterClass.classList.remove('hidden');
+                            springClass.classList.add('hidden');
+                            fallClass.classList.add('hidden');
+                            summerClass.classList.add('hidden');
+                            incomplete.classList.remove('hidden');
+                            complete.classList.remove('hidden');
+                        } else if (seasonFilter.value == 'spring') {
+                            winterClass.classList.add('hidden');
+                            springClass.classList.remove('hidden');
+                            fallClass.classList.add('hidden');
+                            summerClass.classList.add('hidden');
+                            incomplete.classList.remove('hidden');
+                            complete.classList.remove('hidden');
+                        } else if (seasonFilter.value == 'fall') {
+                            winterClass.classList.add('hidden');
+                            springClass.classList.add('hidden');
+                            fallClass.classList.remove('hidden');
+                            summerClass.classList.add('hidden');
+                            incomplete.classList.remove('hidden');
+                            complete.classList.remove('hidden');
+                        } else if (seasonFilter.value == 'summer') {
+                            winterClass.classList.add('hidden');
+                            springClass.classList.add('hidden');
+                            fallClass.classList.add('hidden');
+                            summerClass.classList.remove('hidden');
+                            incomplete.classList.remove('hidden');
+                            complete.classList.remove('hidden');
+                        } else if (seasonFilter.value == 'all') {
+                            winterClass.classList.remove('hidden');;
+                            springClass.classList.remove('hidden');
+                            fallClass.classList.remove('hidden');
+                            summerClass.classList.remove('hidden');
+                            incomplete.classList.remove('hidden');
+                            complete.classList.remove('hidden');
+                        } else if (seasonFilter.value == 'complete') {
+                            winterClass.classList.remove('hidden');;
+                            springClass.classList.remove('hidden');
+                            fallClass.classList.remove('hidden');
+                            summerClass.classList.remove('hidden');
+                            complete.classList.remove('hidden');
+                            incomplete.classList.add('hidden');
+                        } else if (seasonFilter.value == 'incomplete') {
+                            winterClass.classList.remove('hidden');;
+                            springClass.classList.remove('hidden');
+                            fallClass.classList.remove('hidden');
+                            summerClass.classList.remove('hidden');
+                            incomplete.classList.remove('hidden');
+                            complete.classList.add('hidden');
+                        }
+                    }
+
+                    // set the item up so you can click on it
+                    item.onclick = function(event) {
+                        // get last accessed time
+                        let lastAccessed = new Date();
+                        let hours = lastAccessed.getHours();
+                        let dayOrNight = "am";
+
+                        // convert hours 
+                        if (hours == 13) {
+                            hours = 1;
+                            dayOrNight = "pm";
+                        } else if (hours == 14) {
+                            hours = 2;
+                            dayOrNight = "pm";
+                        } else if (hours == 15) {
+                            hours = 3;
+                            dayOrNight = "pm";
+                        } else if (hours == 16) {
+                            hours = 4;
+                            dayOrNight = "pm";
+                        } else if (hours == 17) {
+                            hours = 5;
+                            dayOrNight = "pm";
+                        } else if (hours == 18) {
+                            hours = 6;
+                            dayOrNight = "pm";
+                        } else if (hours == 19) {
+                            hours = 7;
+                            dayOrNight = "pm";
+                        } else if (hours == 20) {
+                            hours = 8;
+                            dayOrNight = "pm";
+                        } else if (hours == 21) {
+                            hours = 9;
+                            dayOrNight = "pm";
+                        } else if (hours == 22) {
+                            hours = 10;
+                            dayOrNight = "pm";
+                        } else if (hours == 23) {
+                            hours = 11;
+                            dayOrNight = "pm";
+                        } else if (hours == 24){
+                            hours = 12;
+                            dayOrNight = "am";
+                        } else {
+                            dayOrNight = "am";
+                        }
+
+                        event.currentTarget.dataset.lastAccessed = (lastAccessed.getMonth()+1)  + "/" + lastAccessed.getDay() + "/" + lastAccessed.getFullYear() + " " + hours + ":" + lastAccessed.getMinutes() + " " + dayOrNight;
+
+                        // get all dom queries to access inner html 
+                        const panelItem = document.getElementById('panel_item');
+                        let h1 = document.getElementById('h1');
+                        let season = document.getElementById('season');
+                        let description = document.getElementById('des');
+                        let created = document.getElementById('created');
+                        let accessed = document.getElementById('accessed');
+                        let close = document.getElementById('item_close');
+
+                        // update the info panel 
+                        h1.innerHTML = event.currentTarget.dataset.title;
+                        season.innerHTML = "Season: " + event.currentTarget.dataset.category;
+                        description.innerHTML = event.currentTarget.dataset.description;
+                        created.innerHTML = "Created: " + event.currentTarget.dataset.timeCreated;
+                        accessed.innerHTML = "Last Accessed: " + event.currentTarget.dataset.lastAccessed;
+                        panelItem.classList.remove('hidden');
+
+                        close.onclick = function(event) {
+                            panelItem.classList.add('hidden');
+                        }
+                    }
+
+                    // close the add panel
+                    panel_add_new_item.classList.add('hidden');
+                }
+
+                // make sure we have all 3 -- if not, trigger the error message
+                else {
+                    add_error.classList.remove('hidden');
+                }
+            }
+        </script>
+    </body>
+</html>
